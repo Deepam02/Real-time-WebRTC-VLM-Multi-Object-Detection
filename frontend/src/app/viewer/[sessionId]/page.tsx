@@ -4,6 +4,7 @@ import { useEffect, useState, useRef } from 'react';
 import { useParams } from 'next/navigation';
 import QRCode from 'qrcode';
 import { io, Socket } from 'socket.io-client';
+import { SimpleDetectionClient, DetectionResult, drawDetections } from '../../../utils/simpleDetectionClient';
 
 export default function ViewerPage() {
   const params = useParams();
@@ -13,12 +14,28 @@ export default function ViewerPage() {
   const [status, setStatus] = useState('initializing');
   const [socket, setSocket] = useState<Socket | null>(null);
   
+  // Detection states
+  const [detectionEnabled, setDetectionEnabled] = useState(false);
+  const [detectionResults, setDetectionResults] = useState<DetectionResult | null>(null);
+  const [detectionStatus, setDetectionStatus] = useState<string>('disconnected');
+  const [detectionFps, setDetectionFps] = useState<number>(0);
+  
   const videoRef = useRef<HTMLVideoElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
   const peerConnectionRef = useRef<RTCPeerConnection | null>(null);
+  const detectionClientRef = useRef<SimpleDetectionClient | null>(null);
 
   // Generate QR code and setup WebRTC
   useEffect(() => {
     if (!sessionId) return;
+
+    // Initialize detection client
+    detectionClientRef.current = new SimpleDetectionClient('http://localhost:5000');
+    
+    // Check detection service health
+    detectionClientRef.current.checkHealth().then((healthy) => {
+      setDetectionStatus(healthy ? 'ready' : 'unavailable');
+    });
 
     const init = async () => {
       // Generate QR code for phone access
@@ -105,6 +122,111 @@ export default function ViewerPage() {
     };
   }, [sessionId]);
 
+  // Detection processing loop
+  useEffect(() => {
+    if (!detectionEnabled || !videoRef.current || !canvasRef.current || !detectionClientRef.current) {
+      return;
+    }
+
+    let animationFrame: number;
+    let isProcessing = false;
+
+    const processFrame = async () => {
+      if (isProcessing || !videoRef.current || !canvasRef.current || !detectionClientRef.current) {
+        animationFrame = requestAnimationFrame(processFrame);
+        return;
+      }
+
+      isProcessing = true;
+      
+      try {
+        const result = await detectionClientRef.current.processFrame(videoRef.current);
+        
+        if (result) {
+          setDetectionResults(result);
+          setDetectionFps(result.fps);
+          
+          // Draw detections on canvas overlay
+          drawDetections(
+            canvasRef.current,
+            result.detections,
+            videoRef.current.videoWidth,
+            videoRef.current.videoHeight
+          );
+        }
+      } catch (error) {
+        console.error('Detection processing error:', error);
+      } finally {
+        isProcessing = false;
+      }
+
+      animationFrame = requestAnimationFrame(processFrame);
+    };
+
+    // Start processing when video is playing
+    const video = videoRef.current;
+    const handleVideoPlay = () => {
+      processFrame();
+    };
+
+    const handleVideoPause = () => {
+      if (animationFrame) {
+        cancelAnimationFrame(animationFrame);
+      }
+    };
+
+    video.addEventListener('play', handleVideoPlay);
+    video.addEventListener('pause', handleVideoPause);
+
+    // Start processing if video is already playing
+    if (!video.paused) {
+      processFrame();
+    }
+
+    return () => {
+      if (animationFrame) {
+        cancelAnimationFrame(animationFrame);
+      }
+      video.removeEventListener('play', handleVideoPlay);
+      video.removeEventListener('pause', handleVideoPause);
+    };
+  }, [detectionEnabled]);
+
+  // Update canvas size to match video
+  useEffect(() => {
+    const updateCanvasSize = () => {
+      if (!canvasRef.current || !videoRef.current) return;
+
+      const video = videoRef.current;
+      const canvas = canvasRef.current;
+      
+      // Match canvas size to video display size
+      const rect = video.getBoundingClientRect();
+      canvas.width = rect.width;
+      canvas.height = rect.height;
+      canvas.style.width = `${rect.width}px`;
+      canvas.style.height = `${rect.height}px`;
+    };
+
+    const video = videoRef.current;
+    if (video) {
+      video.addEventListener('loadedmetadata', updateCanvasSize);
+      video.addEventListener('resize', updateCanvasSize);
+      
+      // Update size when video starts playing
+      const handleCanPlay = () => {
+        updateCanvasSize();
+      };
+      video.addEventListener('canplay', handleCanPlay);
+
+      return () => {
+        video.removeEventListener('loadedmetadata', updateCanvasSize);
+        video.removeEventListener('resize', updateCanvasSize);
+        video.removeEventListener('canplay', handleCanPlay);
+      };
+    }
+  }, [status]);
+
   const setupPeerConnection = (socket: Socket) => {
     const pc = new RTCPeerConnection({
       iceServers: [
@@ -176,6 +298,28 @@ export default function ViewerPage() {
     }
   };
 
+  const toggleDetection = () => {
+    if (detectionStatus === 'unavailable') {
+      alert('Detection service is not available. Please make sure it\'s running on http://localhost:5000');
+      return;
+    }
+    
+    const newEnabled = !detectionEnabled;
+    setDetectionEnabled(newEnabled);
+    
+    if (detectionClientRef.current) {
+      detectionClientRef.current.setEnabled(newEnabled);
+    }
+
+    // Clear canvas when disabling
+    if (!newEnabled && canvasRef.current) {
+      const ctx = canvasRef.current.getContext('2d');
+      if (ctx) {
+        ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
+      }
+    }
+  };
+
   return (
     <div className="card">
       <h1 className="title">📺 Viewer</h1>
@@ -183,6 +327,13 @@ export default function ViewerPage() {
 
       <div className={getStatusClass()}>
         {getStatusMessage()}
+        {detectionStatus !== 'disconnected' && (
+          <div style={{ fontSize: '12px', marginTop: '5px', opacity: 0.8 }}>
+            Detection Service: {detectionStatus === 'ready' ? '✅ Ready' : 
+                             detectionStatus === 'unavailable' ? '❌ Unavailable' : 
+                             '🔄 Checking...'}
+          </div>
+        )}
       </div>
 
       {status === 'waiting' && qrCodeUrl && (
@@ -205,15 +356,65 @@ export default function ViewerPage() {
         </div>
       )}
 
-      <div className="video-container">
+      <div className="video-container" style={{ position: 'relative', display: 'inline-block' }}>
         {status === 'streaming' ? (
-          <video
-            ref={videoRef}
-            className="video"
-            autoPlay
-            playsInline
-            muted
-          />
+          <>
+            <video
+              ref={videoRef}
+              className="video"
+              autoPlay
+              playsInline
+              muted
+            />
+            {/* Detection overlay canvas */}
+            <canvas
+              ref={canvasRef}
+              style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                pointerEvents: 'none',
+                zIndex: 10
+              }}
+            />
+            {/* Detection info panel */}
+            {detectionEnabled && (
+              <div
+                style={{
+                  position: 'absolute',
+                  top: 10,
+                  right: 10,
+                  background: 'rgba(0,0,0,0.8)',
+                  color: 'white',
+                  padding: '10px',
+                  borderRadius: '8px',
+                  fontSize: '12px',
+                  fontFamily: 'monospace',
+                  zIndex: 20,
+                  minWidth: '150px'
+                }}
+              >
+                <div>🤖 Detection: {detectionStatus}</div>
+                <div>📊 FPS: {detectionFps.toFixed(1)}</div>
+                <div>🎯 Objects: {detectionResults?.detection_count || 0}</div>
+                {detectionResults && detectionResults.detections.length > 0 && (
+                  <div style={{ marginTop: '8px', borderTop: '1px solid #666', paddingTop: '8px' }}>
+                    <div style={{ fontWeight: 'bold', marginBottom: '4px' }}>Detected:</div>
+                    {detectionResults.detections.slice(0, 3).map((detection, i) => (
+                      <div key={i} style={{ fontSize: '11px', marginBottom: '2px' }}>
+                        {detection.class_name} ({(detection.confidence * 100).toFixed(0)}%)
+                      </div>
+                    ))}
+                    {detectionResults.detections.length > 3 && (
+                      <div style={{ fontSize: '11px', color: '#aaa' }}>
+                        +{detectionResults.detections.length - 3} more...
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+          </>
         ) : (
           <div className="video-placeholder">
             {status === 'waiting' && '📱 Scan QR code with your phone'}
@@ -224,7 +425,31 @@ export default function ViewerPage() {
         )}
       </div>
 
-      <div style={{ marginTop: '20px' }}>
+      <div style={{ marginTop: '20px', display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+        {/* Detection toggle button */}
+        {status === 'streaming' && (
+          <button
+            onClick={toggleDetection}
+            style={{
+              padding: '12px 20px',
+              backgroundColor: detectionEnabled ? '#dc3545' : '#28a745',
+              color: 'white',
+              border: 'none',
+              borderRadius: '8px',
+              cursor: detectionStatus === 'unavailable' ? 'not-allowed' : 'pointer',
+              fontSize: '14px',
+              fontWeight: 'bold',
+              opacity: detectionStatus === 'unavailable' ? 0.5 : 1,
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px'
+            }}
+            disabled={detectionStatus === 'unavailable'}
+          >
+            {detectionEnabled ? '🚫 Disable Detection' : '🤖 Enable Detection'}
+          </button>
+        )}
+        
         <button 
           className="button" 
           onClick={() => window.location.href = '/'}
