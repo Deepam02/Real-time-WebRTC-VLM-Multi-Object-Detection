@@ -1,5 +1,10 @@
 # 🎯🤖 Real-time WebRTC VLM Multi-Object Detection
 
+## 🌐 **Live Demo**
+**🚀 Try it now:** [https://real-time-web-rtc-vlm-multi-object-pi.vercel.app/](https://real-time-web-rtc-vlm-multi-object-pi.vercel.app/)
+
+---
+
 An intelligent real-time video streaming and object detection system that combines WebRTC technology with Vision Language Models (VLM) for advanced multi-object detection and analysis.
 
 ## 🎯 How It Works

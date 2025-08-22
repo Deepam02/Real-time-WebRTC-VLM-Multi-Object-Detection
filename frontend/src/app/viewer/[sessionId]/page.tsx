@@ -322,7 +322,7 @@ export default function ViewerPage() {
 
   return (
     <div className="card">
-      <h1 className="title">📺 Viewer</h1>
+      <h1 className="title">🎯🤖 AI Detection Viewer</h1>
       <p className="subtitle">Session: {sessionId}</p>
 
       <div className={getStatusClass()}>
@@ -382,32 +382,42 @@ export default function ViewerPage() {
               <div
                 style={{
                   position: 'absolute',
-                  top: 10,
-                  right: 10,
-                  background: 'rgba(0,0,0,0.8)',
+                  top: 15,
+                  right: 15,
+                  background: 'rgba(0,0,0,0.85)',
                   color: 'white',
-                  padding: '10px',
-                  borderRadius: '8px',
-                  fontSize: '12px',
-                  fontFamily: 'monospace',
+                  padding: '12px 15px',
+                  borderRadius: '10px',
+                  fontSize: '14px',
+                  fontFamily: 'system-ui, -apple-system, sans-serif',
                   zIndex: 20,
-                  minWidth: '150px'
+                  minWidth: '180px',
+                  backdropFilter: 'blur(8px)',
+                  border: '1px solid rgba(255,255,255,0.1)'
                 }}
               >
-                <div>🤖 Detection: {detectionStatus}</div>
-                <div>📊 FPS: {detectionFps.toFixed(1)}</div>
-                <div>🎯 Objects: {detectionResults?.detection_count || 0}</div>
+                <div style={{ marginBottom: '8px', fontWeight: 'bold', fontSize: '15px' }}>
+                  🤖 AI Detection
+                </div>
+                <div style={{ marginBottom: '4px' }}>
+                  Status: <span style={{ color: detectionStatus === 'ready' ? '#4ade80' : '#f87171' }}>
+                    {detectionStatus}
+                  </span>
+                </div>
+                <div style={{ marginBottom: '4px' }}>📊 FPS: {detectionFps.toFixed(1)}</div>
+                <div style={{ marginBottom: '8px' }}>🎯 Objects: {detectionResults?.detection_count || 0}</div>
                 {detectionResults && detectionResults.detections.length > 0 && (
-                  <div style={{ marginTop: '8px', borderTop: '1px solid #666', paddingTop: '8px' }}>
-                    <div style={{ fontWeight: 'bold', marginBottom: '4px' }}>Detected:</div>
-                    {detectionResults.detections.slice(0, 3).map((detection, i) => (
-                      <div key={i} style={{ fontSize: '11px', marginBottom: '2px' }}>
-                        {detection.class_name} ({(detection.confidence * 100).toFixed(0)}%)
+                  <div style={{ borderTop: '1px solid rgba(255,255,255,0.2)', paddingTop: '8px' }}>
+                    <div style={{ fontWeight: 'bold', marginBottom: '6px', fontSize: '13px' }}>Detected Objects:</div>
+                    {detectionResults.detections.slice(0, 4).map((detection, i) => (
+                      <div key={i} style={{ fontSize: '12px', marginBottom: '3px', display: 'flex', justifyContent: 'space-between' }}>
+                        <span>{detection.class_name}</span>
+                        <span style={{ color: '#a3a3a3' }}>({(detection.confidence * 100).toFixed(0)}%)</span>
                       </div>
                     ))}
-                    {detectionResults.detections.length > 3 && (
-                      <div style={{ fontSize: '11px', color: '#aaa' }}>
-                        +{detectionResults.detections.length - 3} more...
+                    {detectionResults.detections.length > 4 && (
+                      <div style={{ fontSize: '11px', color: '#a3a3a3', textAlign: 'center', marginTop: '4px' }}>
+                        +{detectionResults.detections.length - 4} more objects...
                       </div>
                     )}
                   </div>
@@ -425,35 +435,61 @@ export default function ViewerPage() {
         )}
       </div>
 
-      <div style={{ marginTop: '20px', display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+      <div style={{ 
+        marginTop: '30px', 
+        display: 'flex', 
+        gap: '15px', 
+        flexWrap: 'wrap', 
+        justifyContent: 'center',
+        alignItems: 'center'
+      }}>
         {/* Detection toggle button */}
         {status === 'streaming' && (
           <button
             onClick={toggleDetection}
             style={{
-              padding: '12px 20px',
+              padding: '15px 25px',
               backgroundColor: detectionEnabled ? '#dc3545' : '#28a745',
               color: 'white',
               border: 'none',
-              borderRadius: '8px',
+              borderRadius: '12px',
               cursor: detectionStatus === 'unavailable' ? 'not-allowed' : 'pointer',
-              fontSize: '14px',
+              fontSize: '16px',
               fontWeight: 'bold',
               opacity: detectionStatus === 'unavailable' ? 0.5 : 1,
               display: 'flex',
               alignItems: 'center',
-              gap: '8px'
+              gap: '10px',
+              transition: 'all 0.2s ease',
+              boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+              minWidth: '180px',
+              justifyContent: 'center'
             }}
             disabled={detectionStatus === 'unavailable'}
+            onMouseOver={(e) => {
+              if (detectionStatus !== 'unavailable') {
+                e.currentTarget.style.transform = 'translateY(-2px)';
+                e.currentTarget.style.boxShadow = '0 6px 20px rgba(0,0,0,0.25)';
+              }
+            }}
+            onMouseOut={(e) => {
+              e.currentTarget.style.transform = 'translateY(0px)';
+              e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)';
+            }}
           >
-            {detectionEnabled ? '🚫 Disable Detection' : '🤖 Enable Detection'}
+            {detectionEnabled ? '🚫 Disable AI Detection' : '🤖 Enable AI Detection'}
           </button>
         )}
         
         <button 
           className="button" 
           onClick={() => window.location.href = '/'}
-          style={{ background: '#6c757d' }}
+          style={{ 
+            background: '#6c757d',
+            minWidth: '150px',
+            padding: '15px 25px',
+            fontSize: '16px'
+          }}
         >
           ← Back to Home
         </button>
