@@ -28,7 +28,7 @@ export const DetectionOverlay: React.FC<DetectionOverlayProps> = ({
     if (!enableDetection) return;
 
     const client = new DetectionServiceClient({
-      url: 'http://localhost:5000', // Update this to your detection service URL
+      url: process.env.NEXT_PUBLIC_DETECTION_SERVER_URL || 'http://localhost:5000', // Update this to your detection service URL
       enableDetection: true,
       detectionInterval: 100, // 10 FPS max
       confidenceThreshold: 0.3

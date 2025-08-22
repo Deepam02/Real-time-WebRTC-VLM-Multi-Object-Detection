@@ -29,8 +29,8 @@ export default function ViewerPage() {
   useEffect(() => {
     if (!sessionId) return;
 
-    // Initialize detection client
-    detectionClientRef.current = new SimpleDetectionClient('http://localhost:5000');
+    // Initialize detection client with environment variable
+    detectionClientRef.current = new SimpleDetectionClient();
     
     // Check detection service health
     detectionClientRef.current.checkHealth().then((healthy) => {

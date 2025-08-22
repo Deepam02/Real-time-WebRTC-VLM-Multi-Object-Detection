@@ -32,7 +32,7 @@ export class SimpleDetectionClient {
   private lastDetectionTime: number = 0;
   private detectionInterval: number = 200; // 5 FPS max
 
-  constructor(url: string = 'http://localhost:5000') {
+  constructor(url: string = process.env.NEXT_PUBLIC_DETECTION_SERVER_URL || 'http://localhost:5000') {
     this.detectionServiceUrl = url;
   }
 

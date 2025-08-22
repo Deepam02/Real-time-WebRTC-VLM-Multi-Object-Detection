@@ -52,7 +52,7 @@ export class DetectionServiceClient {
 
   constructor(config: DetectionServiceConfig = {}) {
     this.config = {
-      url: config.url || 'http://localhost:5000',
+      url: config.url || process.env.NEXT_PUBLIC_DETECTION_SERVER_URL || 'http://localhost:5000',
       autoConnect: config.autoConnect ?? true,
       enableDetection: config.enableDetection ?? true,
       detectionInterval: config.detectionInterval || 100, // 10 FPS max
