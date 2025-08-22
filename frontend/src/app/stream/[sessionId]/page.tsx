@@ -236,17 +236,17 @@ export default function StreamPage() {
   const getStatusMessage = () => {
     switch (status) {
       case 'initializing':
-        return 'Connecting to session...';
+        return 'Initializing AI detection session...';
       case 'connected':
-        return 'Connected! Tap "Start Streaming" to share your camera.';
+        return 'Connected! Tap "Start AI Detection Stream" to begin object detection.';
       case 'requesting_permission':
-        return 'Requesting camera permission...';
+        return 'Requesting camera permission for AI detection...';
       case 'streaming':
-        return 'Streaming to viewer! Keep this page open.';
+        return 'AI Detection active! Keep this page open for real-time object detection.';
       case 'permission_denied':
-        return 'Camera permission denied. Please allow camera access and refresh.';
+        return 'Camera permission denied. AI detection requires camera access. Please allow and refresh.';
       case 'no_camera':
-        return 'No camera found. Please check your device.';
+        return 'No camera found. AI detection requires camera access.';
       case 'error':
         return 'Connection error. Please refresh and try again.';
       default:
@@ -269,7 +269,7 @@ export default function StreamPage() {
 
   return (
     <div className="card">
-      <h1 className="title">📱 Phone Camera</h1>
+      <h1 className="title">📱🤖 AI Detection Camera</h1>
       <p className="subtitle">Session: {sessionId}</p>
 
       <div className={getStatusClass()}>
@@ -287,7 +287,7 @@ export default function StreamPage() {
           />
         ) : (
           <div className="video-placeholder">
-            📷 Camera will appear here when streaming
+            🎯 AI Detection Camera will appear here when streaming
           </div>
         )}
         
@@ -297,7 +297,7 @@ export default function StreamPage() {
               🔄 Switch Camera
             </button>
             <button className="button" onClick={stopStreaming} style={{ background: '#dc3545' }}>
-              ⏹️ Stop
+              ⏹️ Stop AI Stream
             </button>
           </div>
         )}
@@ -306,24 +306,26 @@ export default function StreamPage() {
       <div style={{ marginTop: '20px' }}>
         {!isStreaming && status === 'connected' && (
           <button className="button" onClick={startStreaming}>
-            📹 Start Streaming
+            🎯 Start AI Detection Stream
           </button>
         )}
         
         {status === 'permission_denied' && (
           <button className="button" onClick={() => window.location.reload()}>
-            🔄 Retry
+            🔄 Retry Camera Access
           </button>
         )}
       </div>
 
       <div className="instruction" style={{ marginTop: '20px' }}>
-        <h3>📋 Instructions:</h3>
+        <h3>🤖 AI Detection Instructions:</h3>
         <ul style={{ marginLeft: '20px', textAlign: 'left' }}>
-          <li>Keep this page open while streaming</li>
+          <li>Keep this page open while AI detection is active</li>
           <li>Use "Switch Camera" to toggle between front/back camera</li>
-          <li>The viewer will see your camera feed in real-time</li>
-          <li>Make sure you have a stable internet connection</li>
+          <li>The viewer will see your camera feed with real-time object detection</li>
+          <li>Point camera at objects for AI to detect and analyze</li>
+          <li>Ensure good lighting for optimal detection accuracy</li>
+          <li>Keep device steady for better detection performance</li>
         </ul>
       </div>
     </div>

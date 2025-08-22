@@ -33,20 +33,22 @@ export default function Home() {
 
   return (
     <div className="card">
-      <h1 className="title">📱📺 Camera Stream</h1>
+      <h1 className="title">🎯🤖 AI Object Detection Stream</h1>
       <p className="subtitle">
-        Stream your phone&apos;s camera to your laptop in real-time
+        Stream your phone&apos;s camera with real-time AI object detection and analysis
       </p>
 
       {!sessionId ? (
         <div>
           <div className="instruction">
-            <h3>How it works:</h3>
+            <h3>How AI Detection Works:</h3>
             <ol>
-              <li>Click &quot;Start New Session&quot; to create a streaming session</li>
+              <li>Click &quot;Start AI Detection Session&quot; to create a streaming session</li>
               <li>A QR code will appear - scan it with your phone</li>
               <li>Grant camera access on your phone</li>
-              <li>Your phone&apos;s camera will stream to this browser</li>
+              <li>Enable object detection to see AI-powered analysis</li>
+              <li>Watch real-time object detection with bounding boxes and labels</li>
+              <li>Monitor detection performance and accuracy metrics</li>
             </ol>
           </div>
           
@@ -55,18 +57,18 @@ export default function Home() {
             onClick={createSession}
             disabled={isCreating}
           >
-            {isCreating ? 'Creating...' : 'Start New Session'}
+            {isCreating ? 'Initializing AI...' : 'Start AI Detection Session'}
           </button>
         </div>
       ) : (
         <div>
           <div className="status waiting">
-            ✅ Session created! Use the viewer link below:
+            ✅ AI Detection Session created! Use the viewer link below:
           </div>
           
           <Link href={`/viewer/${sessionId}`}>
             <button className="button">
-              Open Viewer Page
+              Open AI Detection Viewer
             </button>
           </Link>
           
@@ -75,7 +77,7 @@ export default function Home() {
             onClick={() => setSessionId('')}
             style={{ background: '#6c757d' }}
           >
-            Create New Session
+            Create New AI Session
           </button>
         </div>
       )}

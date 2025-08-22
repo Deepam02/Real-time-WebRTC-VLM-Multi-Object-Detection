@@ -2,8 +2,8 @@ import type { Metadata } from 'next'
 import './globals.css'
 
 export const metadata: Metadata = {
-  title: 'WebRTC Camera Stream',
-  description: 'Stream camera from phone to laptop using WebRTC',
+  title: 'AI Object Detection Stream | Real-time WebRTC VLM',
+  description: 'Real-time video streaming with AI-powered multi-object detection using WebRTC and Vision Language Models',
 }
 
 export default function RootLayout({
